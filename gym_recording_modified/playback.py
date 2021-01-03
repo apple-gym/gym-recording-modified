@@ -9,7 +9,7 @@ from gym_recording_modified.utils import constants
 
 logger = logging.getLogger(__name__)
 
-FULL_EXTRACT = ['reward', 'observation', 'action', 'episodes_end_point'] # A list of all the extractable information
+FULL_EXTRACT = ['reward', 'observation', 'action', 'episodes_end_point', 'infos'] # A list of all the extractable information
 
 class TraceRecordingReader:
     def __init__(self, directory: str):
@@ -20,6 +20,8 @@ class TraceRecordingReader:
         extension = file_path[file_path.rfind('.')+1:]
         if extension == 'npy':
             return np.load(file_path)
+        elif extension == 'npz':
+            return np.load(file_path, allow_pickle=True)['arr_0']
         elif extension == 'pkl':
             with open(file_path, 'rb') as f:
                 return pickle.load(f)

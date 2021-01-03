@@ -64,7 +64,7 @@ class TraceRecordingWrapper(gym.Wrapper):
 
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
-        self.recording.add_step(action, self.preprocess_obs(observation), reward)
+        self.recording.add_step(action, self.preprocess_obs(observation), reward, info)
         if done:
             self.recording.end_episode()
         return observation, reward, done, info

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class TraceRecording(object):
     _id_counter = 0
-    def __init__(self, directory=None, batch_size=None, only_reward=False):
+    def __init__(self, directory=None, batch_size=None, only_reward=False, save_infos=True):
         """
         Create a TraceRecording, writing into directory
         """
@@ -26,6 +26,7 @@ class TraceRecording(object):
         self.observation_file_prefix =  self.file_prefix.format('observations', self._id_counter, os.getpid())
         self.action_file_prefix =  self.file_prefix.format('actions', self._id_counter, os.getpid())
         self.eep_file_prefix = self.file_prefix.format('episodes_end_point', self._id_counter, os.getpid())
+        self.info_file_prefix = self.file_prefix.format('infos', self._id_counter, os.getpid())
         TraceRecording._id_counter += 1
 
         self.closed = False
@@ -37,23 +38,26 @@ class TraceRecording(object):
         self.buffered_step_count = 0
         self.buffer_batch_size = batch_size if batch_size is not None else float('+inf')
         self.only_reward = only_reward
+        self.save_infos = save_infos
 
     def reset_values(self):
         self.actions = []
         self.observations = []
         self.rewards = []
         self.episodes_end_point = []
+        self.infos = []
 
     def add_reset(self, observation):
         assert not self.closed
         self.observations.append(observation)
 
-    def add_step(self, action, observation, reward):
+    def add_step(self, action, observation, reward, info):
         assert not self.closed
         if not self.only_reward:
             self.actions.append(action)
             self.observations.append(observation)
         self.rewards.append(reward)
+        self.infos.append(info)
         self.buffered_step_count += 1
 
     def end_episode(self):
@@ -81,6 +85,7 @@ class TraceRecording(object):
         actions_batch_fn = '{}.ep{:09}'.format(self.action_file_prefix, self.buffered_step_count)
         observations_batch_fn = '{}.ep{:09}'.format(self.observation_file_prefix, self.buffered_step_count)
         eep_batch_fn = '{}.ep{:09}'.format(self.eep_file_prefix, self.buffered_step_count)
+        info_batch_fn = '{}.ep{:09}'.format(self.info_file_prefix, self.buffered_step_count)
 
         # Saving data
         self.save_to_file(os.path.join(self.directory, rewards_batch_fn), self.rewards)
@@ -88,16 +93,20 @@ class TraceRecording(object):
             self.save_to_file(os.path.join(self.directory, observations_batch_fn), self.observations)
             self.save_to_file(os.path.join(self.directory, actions_batch_fn), self.actions)
         self.save_to_file(os.path.join(self.directory, eep_batch_fn), self.episodes_end_point)
+        if self.save_infos:
+            self.save_to_file(os.path.join(self.directory, info_batch_fn), self.infos)
         
         self.reset_values()
         self.buffered_step_count = 0
 
-    def save_to_file(self, path, data, saving_type='numpy'):
+    def save_to_file(self, path, data, saving_type='npz'):
         if saving_type=='pickle':
             with open(path + '.pkl', 'wb') as f:
                 pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
         elif saving_type=='numpy':
             np.save(path, np.array(data))
+        elif saving_type=='npz':
+            np.savez_compressed(path + '.npz', np.array(data))
         else:
             raise ValueError('saving_type value cannot be identified: {}'.format(saving_type))
 
