@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class TraceRecording(object):
     _id_counter = 0
-    def __init__(self, directory=None, batch_size=None, only_reward=False, save_infos=True):
+    def __init__(self, directory=None, batch_size=None, only_reward=False, save_infos=False):
         """
         Create a TraceRecording, writing into directory
         """
