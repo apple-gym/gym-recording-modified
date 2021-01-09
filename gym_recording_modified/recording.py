@@ -5,8 +5,8 @@ import numpy as np
 import gym
 import pickle
 from gym import error
+from loguru import logger
 from gym_recording_modified.utils import constants
-logger = logging.getLogger(__name__)
 
 class TraceRecording(object):
     _id_counter = 0
@@ -96,6 +96,7 @@ class TraceRecording(object):
         if self.save_infos:
             self.save_to_file(os.path.join(self.directory, info_batch_fn), self.infos)
         
+        logger.info(f'Saving {self.buffered_step_count} steps to {observations_batch_fn}')
         self.reset_values()
         self.buffered_step_count = 0
 
